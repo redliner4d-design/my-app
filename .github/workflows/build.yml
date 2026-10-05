@@ -1,0 +1,43 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # اگر پروژه را ZIP آپلود کردی، دو خط زیر را از کامنت دربیاور:
+      - name: Unzip project
+        run: |
+          unzip -o project.zip
+          if [ -d "app" ] && [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
+            echo "فایل‌ها داخل پوشه جدا هستند"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew 2>/dev/null || true
+          if [ -f "gradlew" ]; then
+            ./gradlew assembleDebug --stacktrace
+          else
+            gradle assembleDebug --stacktrace
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-app-apk
+          path: app/build/outputs/apk/debug/*.apk
